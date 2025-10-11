@@ -37,6 +37,48 @@ import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.INSTANCE;
 @Mixin(PlayerList.class)
 public class PlayerManagerMixin {
 
+    private static UUID getActualUUID(ServerPlayer player) {
+        try {
+            Class<?> playerClass = player.getClass().getSuperclass();
+            Class<?> impersonatorClass = Class.forName("org.ladysnake.impersonate.Impersonator");
+            Object impersonator = impersonatorClass.getMethod("get", playerClass).invoke(null, player);
+            boolean isImpersonating = (boolean) impersonatorClass.getMethod("isImpersonating").invoke(impersonator);
+            if (isImpersonating) {
+                GameProfile profile = (GameProfile) impersonatorClass.getMethod("getActualProfile").invoke(impersonator);
+                return profile.getId();
+            }
+        } catch (Exception ignored) {}
+        return player.getUUID();
+    }
+
+    private static UUID getDisplayUUID(ServerPlayer player) {
+        try {
+            Class<?> playerClass = player.getClass().getSuperclass();
+            Class<?> impersonatorClass = Class.forName("org.ladysnake.impersonate.Impersonator");
+            Object impersonator = impersonatorClass.getMethod("get", playerClass).invoke(null, player);
+            boolean isImpersonating = (boolean) impersonatorClass.getMethod("isImpersonating").invoke(impersonator);
+            if (isImpersonating) {
+                GameProfile profile = (GameProfile) impersonatorClass.getMethod("getImpersonatedProfile").invoke(impersonator);
+                if (profile.getId() != null) return profile.getId();
+            }
+        } catch (Exception ignored) {}
+        return player.getUUID();
+    }
+
+    private static String getDisplayName(ServerPlayer player) {
+        try {
+            Class<?> playerClass = player.getClass().getSuperclass();
+            Class<?> impersonatorClass = Class.forName("org.ladysnake.impersonate.Impersonator");
+            Object impersonator = impersonatorClass.getMethod("get", playerClass).invoke(null, player);
+            boolean isImpersonating = (boolean) impersonatorClass.getMethod("isImpersonating").invoke(impersonator);
+            if (isImpersonating) {
+                GameProfile profile = (GameProfile) impersonatorClass.getMethod("getImpersonatedProfile").invoke(impersonator);
+                if (profile.getName() != null) return profile.getName();
+            }
+        } catch (Exception ignored) {}
+        return player.getName().getString();
+    }
+
     /**
      * Handle whitelisting
      */
@@ -71,35 +113,38 @@ public class PlayerManagerMixin {
     @Inject(at = @At(value = "TAIL"), method = "placeNewPlayer")
     private void onPlayerJoin(Connection connection, ServerPlayer p, CommonListenerCookie commonListenerCookie, CallbackInfo ci) {
         if (DiscordIntegration.INSTANCE != null) {
-            if(INSTANCE.getServerInterface().isPlayerVanish(p.getUUID())) return;
-            if (LinkManager.isPlayerLinked(p.getUUID()) && LinkManager.getLink(null, p.getUUID()).settings.hideFromDiscord)
+            UUID actualUUID = getActualUUID(p);
+            if(INSTANCE.getServerInterface().isPlayerVanish(actualUUID)) return;
+            if (LinkManager.isPlayerLinked(actualUUID) && LinkManager.getLink(null, actualUUID).settings.hideFromDiscord)
                 return;
-            LinkManager.checkGlobalAPI(p.getUUID());
+            LinkManager.checkGlobalAPI(actualUUID);
             if (!Localization.instance().playerJoin.isBlank()) {
+                UUID displayUUID = getDisplayUUID(p);
+                String displayName = getDisplayName(p);
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.playerJoinMessage.asEmbed) {
-                    final String avatarURL = INSTANCE.getSkinURL().replace("%uuid%", p.getUUID().toString()).replace("%uuid_dashless%", p.getUUID().toString().replace("-", "")).replace("%name%", p.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
+                    final String avatarURL = INSTANCE.getSkinURL().replace("%uuid%", displayUUID.toString()).replace("%uuid_dashless%", displayUUID.toString().replace("-", "")).replace("%name%", displayName).replace("%randomUUID%", UUID.randomUUID().toString());
                     if (!Configuration.instance().embedMode.playerJoinMessage.customJSON.isBlank()) {
                         final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbedJson(Configuration.instance().embedMode.playerJoinMessage.customJSON
-                                .replace("%uuid%", p.getUUID().toString())
-                                .replace("%uuid_dashless%", p.getUUID().toString().replace("-", ""))
-                                .replace("%name%", MessageUtilsImpl.formatPlayerName(p))
+                                .replace("%uuid%", displayUUID.toString())
+                                .replace("%uuid_dashless%", displayUUID.toString().replace("-", ""))
+                                .replace("%name%", displayName)
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
                                 .replace("%avatarURL%", avatarURL)
-                                .replace("%playerColor%", "" + TextColors.generateFromUUID(p.getUUID()).getRGB())
+                                .replace("%playerColor%", "" + TextColors.generateFromUUID(displayUUID).getRGB())
                         );
                         DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
                     } else {
                         final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbed();
-                        b.setAuthor(MessageUtilsImpl.formatPlayerName(p), null, avatarURL)
-                                .setDescription(Localization.instance().playerJoin.replace("%player%", MessageUtilsImpl.formatPlayerName(p)));
+                        b.setAuthor(displayName, null, avatarURL)
+                                .setDescription(Localization.instance().playerJoin.replace("%player%", displayName));
                         DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()), INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     }
                 } else
-                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerJoin.replace("%player%", MessageUtilsImpl.formatPlayerName(p)), INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
+                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerJoin.replace("%player%", displayName), INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
             }
             // Fix link status (if user does not have role, give the role to the user, or vice versa)
             WorkThread.executeJob(() -> {
-                final UUID uuid = p.getUUID();
+                final UUID uuid = actualUUID;
                 if (!LinkManager.isPlayerLinked(uuid)) {
                     return;
                 }
@@ -107,7 +152,8 @@ public class PlayerManagerMixin {
                 final Member member = DiscordIntegration.INSTANCE.getMemberById(LinkManager.getLink(null, uuid).discordID);
 
                 if (Configuration.instance().linking.shouldNickname) {
-                    member.modifyNickname(MessageUtilsImpl.formatPlayerName(p)).queue();
+                    String displayNameForNickname = getDisplayName(p);
+                    member.modifyNickname(displayNameForNickname).queue();
                 }
 
                 if (Configuration.instance().linking.linkedRoleID.equals("0")) {

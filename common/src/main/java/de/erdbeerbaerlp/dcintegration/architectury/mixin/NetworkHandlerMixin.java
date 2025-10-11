@@ -1,6 +1,7 @@
 package de.erdbeerbaerlp.dcintegration.architectury.mixin;
 
 
+import com.mojang.authlib.GameProfile;
 import de.erdbeerbaerlp.dcintegration.architectury.DiscordIntegrationMod;
 import de.erdbeerbaerlp.dcintegration.architectury.util.MessageUtilsImpl;
 import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
@@ -29,6 +30,48 @@ public class NetworkHandlerMixin {
     @Shadow
     public ServerPlayer player;
 
+    private static UUID getActualUUID(ServerPlayer player) {
+        try {
+            Class<?> playerClass = player.getClass().getSuperclass();
+            Class<?> impersonatorClass = Class.forName("org.ladysnake.impersonate.Impersonator");
+            Object impersonator = impersonatorClass.getMethod("get", playerClass).invoke(null, player);
+            boolean isImpersonating = (boolean) impersonatorClass.getMethod("isImpersonating").invoke(impersonator);
+            if (isImpersonating) {
+                GameProfile profile = (GameProfile) impersonatorClass.getMethod("getActualProfile").invoke(impersonator);
+                return profile.getId();
+            }
+        } catch (Exception ignored) {}
+        return player.getUUID();
+    }
+
+    private static UUID getDisplayUUID(ServerPlayer player) {
+        try {
+            Class<?> playerClass = player.getClass().getSuperclass();
+            Class<?> impersonatorClass = Class.forName("org.ladysnake.impersonate.Impersonator");
+            Object impersonator = impersonatorClass.getMethod("get", playerClass).invoke(null, player);
+            boolean isImpersonating = (boolean) impersonatorClass.getMethod("isImpersonating").invoke(impersonator);
+            if (isImpersonating) {
+                GameProfile profile = (GameProfile) impersonatorClass.getMethod("getImpersonatedProfile").invoke(impersonator);
+                if (profile.getId() != null) return profile.getId();
+            }
+        } catch (Exception ignored) {}
+        return player.getUUID();
+    }
+
+    private static String getDisplayName(ServerPlayer player) {
+        try {
+            Class<?> playerClass = player.getClass().getSuperclass();
+            Class<?> impersonatorClass = Class.forName("org.ladysnake.impersonate.Impersonator");
+            Object impersonator = impersonatorClass.getMethod("get", playerClass).invoke(null, player);
+            boolean isImpersonating = (boolean) impersonatorClass.getMethod("isImpersonating").invoke(impersonator);
+            if (isImpersonating) {
+                GameProfile profile = (GameProfile) impersonatorClass.getMethod("getImpersonatedProfile").invoke(impersonator);
+                if (profile.getName() != null) return profile.getName();
+            }
+        } catch (Exception ignored) {}
+        return player.getName().getString();
+    }
+
     /**
      * Handle possible timeout
      */
@@ -36,46 +79,49 @@ public class NetworkHandlerMixin {
     private void onDisconnect(DisconnectionDetails disconnectionDetails, CallbackInfo ci) {
         final Component reason = disconnectionDetails.reason();
         if (DiscordIntegrationMod.stopped) return; //Try to fix player leave messages after stop!
-        if(INSTANCE.getServerInterface().isPlayerVanish(player.getUUID())) return;
-        if (LinkManager.isPlayerLinked(player.getUUID()) && LinkManager.getLink(null, player.getUUID()).settings.hideFromDiscord) {
+        UUID actualUUID = getActualUUID(player);
+        UUID displayUUID = getDisplayUUID(player);
+        String displayName = getDisplayName(player);
+        if(INSTANCE.getServerInterface().isPlayerVanish(actualUUID)) return;
+        if (LinkManager.isPlayerLinked(actualUUID) && LinkManager.getLink(null, actualUUID).settings.hideFromDiscord) {
             return;
         }
         if (reason.equals(Component.translatable("disconnect.timeout")))
-            DiscordIntegrationMod.timeouts.add(this.player.getUUID());
-        INSTANCE.callEventC((a)->a.onPlayerLeave(player.getUUID()));
-        final String avatarURL = INSTANCE.getSkinURL().replace("%uuid%", player.getUUID().toString()).replace("%uuid_dashless%", player.getUUID().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
-        if (DiscordIntegration.INSTANCE != null && !DiscordIntegrationMod.timeouts.contains(player.getUUID())) {
+            DiscordIntegrationMod.timeouts.add(actualUUID);
+        INSTANCE.callEventC((a)->a.onPlayerLeave(actualUUID));
+        final String avatarURL = INSTANCE.getSkinURL().replace("%uuid%", displayUUID.toString()).replace("%uuid_dashless%", displayUUID.toString().replace("-", "")).replace("%name%", displayName).replace("%randomUUID%", UUID.randomUUID().toString());
+        if (DiscordIntegration.INSTANCE != null && !DiscordIntegrationMod.timeouts.contains(actualUUID)) {
             if (!Localization.instance().playerLeave.isBlank()) {
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.playerLeaveMessages.asEmbed) {
                     if (!Configuration.instance().embedMode.playerLeaveMessages.customJSON.isBlank()) {
                         final EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbedJson(Configuration.instance().embedMode.playerLeaveMessages.customJSON
-                                .replace("%uuid%", player.getUUID().toString())
-                                .replace("%uuid_dashless%", player.getUUID().toString().replace("-", ""))
-                                .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
+                                .replace("%uuid%", displayUUID.toString())
+                                .replace("%uuid_dashless%", displayUUID.toString().replace("-", ""))
+                                .replace("%name%", displayName)
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
                                 .replace("%avatarURL%", avatarURL)
-                                .replace("%playerColor%", "" + TextColors.generateFromUUID(player.getUUID()).getRGB())
+                                .replace("%playerColor%", "" + TextColors.generateFromUUID(displayUUID).getRGB())
                         );
                         DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     } else {
-                        final EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbed().setAuthor(MessageUtilsImpl.formatPlayerName(player), null, avatarURL)
-                                .setDescription(Localization.instance().playerLeave.replace("%player%", MessageUtilsImpl.formatPlayerName(player)));
+                        final EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbed().setAuthor(displayName, null, avatarURL)
+                                .setDescription(Localization.instance().playerLeave.replace("%player%", displayName));
                         DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     }
                 } else
-                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerLeave.replace("%player%", MessageUtilsImpl.formatPlayerName(player)),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
+                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerLeave.replace("%player%", displayName),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
             }
-        } else if (DiscordIntegration.INSTANCE != null && DiscordIntegrationMod.timeouts.contains(player.getUUID())) {
+        } else if (DiscordIntegration.INSTANCE != null && DiscordIntegrationMod.timeouts.contains(actualUUID)) {
             if (!Localization.instance().playerTimeout.isBlank()) {
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.playerLeaveMessages.asEmbed) {
                     final EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbed()
-                            .setAuthor(MessageUtilsImpl.formatPlayerName(player), null, avatarURL)
-                            .setDescription(Localization.instance().playerTimeout.replace("%player%", MessageUtilsImpl.formatPlayerName(player)));
+                            .setAuthor(displayName, null, avatarURL)
+                            .setDescription(Localization.instance().playerTimeout.replace("%player%", displayName));
                     DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                 } else
-                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerTimeout.replace("%player%", MessageUtilsImpl.formatPlayerName(player)),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
+                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerTimeout.replace("%player%", displayName),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
             }
-            DiscordIntegrationMod.timeouts.remove(player.getUUID());
+            DiscordIntegrationMod.timeouts.remove(actualUUID);
         }
     }
 }

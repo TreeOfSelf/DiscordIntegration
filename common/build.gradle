@@ -4,6 +4,14 @@ architectury {
 
 repositories {
     maven { url "https://repo.erdbeerbaerlp.de/repository/maven-public/" }
+    maven {
+        name = 'Ladysnake Mods'
+        url = 'https://maven.ladysnake.org/releases'
+    }
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
 }
 configurations {
     shadow
@@ -20,6 +28,7 @@ dependencies {
     // Do NOT use other classes from Fabric Loader.
     modImplementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
     modImplementation("de.erdbeerbaerlp:dcintegration.common:$rootProject.core_version")
+    modImplementation files('../../build/devlibs/impersonate-3.0.1-dev.jar')
 }
 artifacts {
     archives tasks.shadowJar
