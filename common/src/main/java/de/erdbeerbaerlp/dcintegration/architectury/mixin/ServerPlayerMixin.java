@@ -43,7 +43,7 @@ public class ServerPlayerMixin {
                                 .replace("%name%", MessageUtilsImpl.formatPlayerName(p))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
                                 .replace("%avatarURL%", avatarURL)
-                                .replace("%deathMessage%", ChatFormatting.stripFormatting(deathMessage.getString()).replace(MessageUtilsImpl.formatPlayerName(p) + " ", ""))
+                                .replace("%deathMessage%", MessageUtilsImpl.escapeJson(ChatFormatting.stripFormatting(deathMessage.getString()).replace(MessageUtilsImpl.formatPlayerName(p) + " ", "")))
                                 .replace("%playerColor%", ""+ TextColors.generateFromUUID(p.getUUID()).getRGB())
                         );
                         if (embed != null) {

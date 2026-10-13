@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
@@ -29,6 +30,12 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.Level;
 
 public class MessageUtilsImpl extends MessageUtils {
+    // Escapes text for use inside a customJSON string value
+    public static String escapeJson(String text) {
+        final String quoted = new JsonPrimitive(text).toString();
+        return quoted.substring(1, quoted.length() - 1);
+    }
+
     public static String formatPlayerName(ServerPlayer player) {
         if (player.getTabListDisplayName() != null)
             return ChatFormatting.stripFormatting(player.getTabListDisplayName().getString());

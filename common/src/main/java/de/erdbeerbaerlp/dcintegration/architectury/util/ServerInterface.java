@@ -1,5 +1,6 @@
 package de.erdbeerbaerlp.dcintegration.architectury.util;
 
+import de.erdbeerbaerlp.dcintegration.architectury.DiscordIntegrationMod;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dcshadow.com.vdurmont.emoji.EmojiParser;
 import dcshadow.net.kyori.adventure.text.Component;
@@ -82,7 +83,7 @@ public class ServerInterface implements McServerInterface {
             }
             //Send to server console too
             final String jsonComp = GsonComponentSerializer.gson().serialize(msg).replace("\\\\n", "\n");
-            final net.minecraft.network.chat.Component comp = SerializeComponentUtils.fromJson(jsonComp, VanillaRegistries.createLookup());
+            final net.minecraft.network.chat.Component comp = SerializeComponentUtils.fromJson(jsonComp, DiscordIntegrationMod.server.registryAccess());
             server.sendSystemMessage(comp);
         } catch (Exception e) {
             e.printStackTrace();
