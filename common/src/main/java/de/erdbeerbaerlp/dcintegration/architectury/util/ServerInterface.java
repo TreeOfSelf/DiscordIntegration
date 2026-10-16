@@ -58,7 +58,7 @@ public class ServerInterface implements McServerInterface {
 
     @Override
     public void sendIngameMessage(Component msg) {
-        msg = linkDiscordTag(msg);
+        msg = linkDiscordTag(unlinkBareDomains(msg));
         final List<ServerPlayer> l = server.getPlayerList().getPlayers();
         try {
             for (final ServerPlayer p : l) {
@@ -140,6 +140,18 @@ public class ServerInterface implements McServerInterface {
                 .replacement(tag -> tag.clickEvent(ClickEvent.openUrl(DISCORD_URL))
                         .hoverEvent(HoverEvent.showText(Component.text("Click to open discord.hardcoreanarchy.gay"))))
                 .build());
+    }
+
+    // Core links anything that looks like a domain ("larped.for"); Discord only links text with a scheme, so the rest
+    // goes back to plain text
+    private static Component unlinkBareDomains(Component c) {
+        final ClickEvent click = c.clickEvent();
+        if (click != null && click.action() == ClickEvent.Action.OPEN_URL) {
+            final String url = click.value().toLowerCase();
+            if (!url.startsWith("http://") && !url.startsWith("https://")) c = c.style(Style.empty());
+        }
+        if (c.children().isEmpty()) return c;
+        return c.children(c.children().stream().map(ServerInterface::unlinkBareDomains).toList());
     }
 
     private void sendReactionMCMessage(ServerPlayer target, Component msgComp) {
