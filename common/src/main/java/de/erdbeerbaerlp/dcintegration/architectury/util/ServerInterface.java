@@ -58,6 +58,7 @@ public class ServerInterface implements McServerInterface {
 
     @Override
     public void sendIngameMessage(Component msg) {
+        msg = linkDiscordTag(msg);
         final List<ServerPlayer> l = server.getPlayerList().getPlayers();
         try {
             for (final ServerPlayer p : l) {
@@ -130,7 +131,19 @@ public class ServerInterface implements McServerInterface {
         }
     }
 
+    // The [Discord] tag in front of relayed messages opens the Discord invite
+    private static final String DISCORD_TAG = "[Discord]";
+    private static final String DISCORD_URL = "https://discord.hardcoreanarchy.gay";
+
+    private static Component linkDiscordTag(Component msg) {
+        return msg.replaceText(TextReplacementConfig.builder().matchLiteral(DISCORD_TAG).once()
+                .replacement(tag -> tag.clickEvent(ClickEvent.openUrl(DISCORD_URL))
+                        .hoverEvent(HoverEvent.showText(Component.text("Click to open discord.hardcoreanarchy.gay"))))
+                .build());
+    }
+
     private void sendReactionMCMessage(ServerPlayer target, Component msgComp) {
+        msgComp = linkDiscordTag(msgComp);
         final String jsonComp = GsonComponentSerializer.gson().serialize(msgComp).replace("\\\\n", "\n");
         try {
             final net.minecraft.network.chat.Component comp = SerializeComponentUtils.fromJson(jsonComp, target.level().registryAccess());
