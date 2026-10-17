@@ -11,7 +11,9 @@
     "ChatMixin",
     "CommandManagerMixin",
     "MixinMinecraftServer",
-    "LinkNumberMixin"
+    "LinkNumberMixin",
+    "LinkCommandMixin",
+    "CommandLinkMixin"
   ],
   "injectors": {
     "defaultRequire": 1

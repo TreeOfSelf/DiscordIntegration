@@ -28,8 +28,13 @@ public final class DiscordIgnore {
     private DiscordIgnore() {}
 
     public static void register() {
-        // Load LinkManager now so LinkNumberMixin is applied (and checked) at startup, not on the first /discord link
+        // Load the classes the link-code mixins change now, so they're applied (and checked) at startup
         LinkManager.pendingLinks.size();
+        try {
+            Class.forName("de.erdbeerbaerlp.dcintegration.common.minecraftCommands.LinkCommand");
+            Class.forName("de.erdbeerbaerlp.dcintegration.common.discordCommands.CommandLink");
+        } catch (ClassNotFoundException ignored) {
+        }
         DiscordIntegration.INSTANCE.registerEventHandler(new DiscordEventHandler() {
             @Override
             public boolean onDiscordMessagePre(MessageReceivedEvent event) {
