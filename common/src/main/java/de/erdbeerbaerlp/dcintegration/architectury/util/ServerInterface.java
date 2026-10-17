@@ -66,8 +66,8 @@ public class ServerInterface implements McServerInterface {
             msg = msg.clickEvent(ClickEvent.suggestCommand("/ignore " + authorName))
                     .hoverEvent(HoverEvent.showText(Component.text(authorName + " - click to ignore")));
         else if (discordAuthor != null)
-            msg = msg.clickEvent(ClickEvent.suggestCommand("/dmute " + discordAuthor[1]))
-                    .hoverEvent(HoverEvent.showText(Component.text(discordAuthor[1] + " - click to mute their Discord messages")));
+            msg = msg.clickEvent(ClickEvent.suggestCommand("/ignore @" + discordAuthor[1]))
+                    .hoverEvent(HoverEvent.showText(Component.text("@" + discordAuthor[1] + " - click to ignore their Discord messages")));
         final List<ServerPlayer> l = server.getPlayerList().getPlayers();
         try {
             for (final ServerPlayer p : l) {

@@ -2,7 +2,6 @@ package de.erdbeerbaerlp.dcintegration.architectury;
 
 import de.erdbeerbaerlp.dcintegration.architectury.util.DiscordIgnore;
 import de.erdbeerbaerlp.dcintegration.architectury.util.DiscordMutes;
-import de.erdbeerbaerlp.dcintegration.architectury.command.DiscordMuteCommands;
 
 import dcshadow.net.kyori.adventure.text.Component;
 import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -93,7 +92,6 @@ public final class DiscordIntegrationMod {
         } catch (InterruptedException | NullPointerException ignored) {
         }
         new McCommandDiscord(minecraftServer.getCommands().getDispatcher());
-        DiscordMuteCommands.register(minecraftServer.getCommands().getDispatcher());
         DiscordMutes.load();
     }
 

@@ -15,9 +15,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-// Per player: Discord users whose messages they don't want to see in game (/dmute), no linking needed.
+// Per player: Discord users whose messages they don't want to see in game, no linking needed.
+// PandaIgnore's /ignore @<discord username> (and /unignore, /ignorelist) call these by reflection.
 // Saved in DiscordIntegration-Data/DiscordMutes.json as { playerUuid: { discordId: discordUsername } }.
-// Also remembers the names of recent Discord authors so /dmute can be typed (and tab-completed) by name.
+// Also remembers the names of recent Discord authors so they can be typed (and tab-completed) by name.
 public final class DiscordMutes {
     private static final Path FILE = Path.of("DiscordIntegration-Data", "DiscordMutes.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();

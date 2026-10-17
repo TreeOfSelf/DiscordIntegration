@@ -10,8 +10,8 @@ import net.minecraft.server.MinecraftServer;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
-// Discord messages: /dmute hides a Discord user for one player (DiscordMutes), and a linked account's
-// messages also follow PandaIgnore's /ignore. Clicking one suggests /ignore <ign> (linked) or /dmute <name>. The core hands sendIngameMessage only the finished text,
+// Discord messages: /ignore @<discord username> hides a Discord user for one player (DiscordMutes), and a linked account's
+// messages also follow PandaIgnore's /ignore. Clicking one suggests /ignore <ign> (linked) or /ignore @<discord username>. The core hands sendIngameMessage only the finished text,
 // so the author is remembered here in onDiscordMessagePre (same thread, right before it).
 public final class DiscordIgnore {
     private static final ThreadLocal<UUID> AUTHOR = new ThreadLocal<>();
