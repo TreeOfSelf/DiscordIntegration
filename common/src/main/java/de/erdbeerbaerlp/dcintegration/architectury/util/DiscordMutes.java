@@ -61,10 +61,20 @@ public final class DiscordMutes {
     }
 
     // Muting is by Discord username (unique, no spaces); the server nickname shown in game finds them too
+    // Mutes are by Discord ID, so a new name doesn't get around them; this just keeps the shown name current.
     public static void seen(String discordId, String username, String nickname) {
         String[] entry = {discordId, username};
         recent.put(nickname.toLowerCase(Locale.ROOT), entry);
         recent.put(username.toLowerCase(Locale.ROOT), entry);
+        boolean renamed = false;
+        for (Map<String, String> m : mutes.values()) {
+            String old = m.get(discordId);
+            if (old != null && !old.equals(username)) {
+                m.put(discordId, username);
+                renamed = true;
+            }
+        }
+        if (renamed) save();
     }
 
     // [discordId, name] for a recent author, or for someone this player already muted
