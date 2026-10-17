@@ -1,5 +1,7 @@
 package de.erdbeerbaerlp.dcintegration.architectury;
 
+import de.erdbeerbaerlp.dcintegration.architectury.util.DiscordIgnore;
+
 import dcshadow.net.kyori.adventure.text.Component;
 import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import de.erdbeerbaerlp.dcintegration.architectury.api.ArchitecturyDiscordEventHandler;
@@ -62,6 +64,7 @@ public final class DiscordIntegrationMod {
     public static void serverStarting(MinecraftServer minecraftServer) {
         server = minecraftServer;
         DiscordIntegration.INSTANCE = new DiscordIntegration(new ServerInterface());
+        DiscordIgnore.register();
         try {
             //Wait a short time to allow JDA to get initiaized
             DiscordIntegration.LOGGER.info("Waiting for JDA to initialize to send starting message... (max 5 seconds before skipping)");

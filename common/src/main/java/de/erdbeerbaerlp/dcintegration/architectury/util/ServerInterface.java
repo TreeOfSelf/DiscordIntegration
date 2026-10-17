@@ -59,12 +59,20 @@ public class ServerInterface implements McServerInterface {
     @Override
     public void sendIngameMessage(Component msg) {
         msg = linkDiscordTag(unlinkBareDomains(msg));
+        final UUID author = DiscordIgnore.author();
+        if (author != null) {
+            final String authorName = server.services().nameToIdCache().get(author).map(net.minecraft.server.players.NameAndId::name).orElse(null);
+            if (authorName != null)
+                msg = msg.clickEvent(ClickEvent.suggestCommand("/ignore " + authorName))
+                        .hoverEvent(HoverEvent.showText(Component.text(authorName + " - click to ignore")));
+        }
         final List<ServerPlayer> l = server.getPlayerList().getPlayers();
         try {
             for (final ServerPlayer p : l) {
                 if (!playerHasPermissions(p, MinecraftPermission.READ_MESSAGES, MinecraftPermission.USER))
                     continue;
                 if (DiscordIntegration.INSTANCE.ignoringPlayers.contains(p.getUUID())) continue;
+                if (DiscordIgnore.isIgnoring(server, p.getUUID(), author)) continue;
                 final Map.Entry<Boolean, Component> ping = ComponentUtils.parsePing(msg, p.getUUID(), p.getName().getString());
                 final String jsonComp = GsonComponentSerializer.gson().serialize(ping.getValue()).replace("\\\\n", "\n");
                 final net.minecraft.network.chat.Component comp = SerializeComponentUtils.fromJson(jsonComp, p.level().registryAccess());
