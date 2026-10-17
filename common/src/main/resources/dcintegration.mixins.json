@@ -10,7 +10,8 @@
     "PlayerManagerMixin",
     "ChatMixin",
     "CommandManagerMixin",
-    "MixinMinecraftServer"
+    "MixinMinecraftServer",
+    "LinkNumberMixin"
   ],
   "injectors": {
     "defaultRequire": 1

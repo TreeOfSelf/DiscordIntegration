@@ -28,6 +28,8 @@ public final class DiscordIgnore {
     private DiscordIgnore() {}
 
     public static void register() {
+        // Load LinkManager now so LinkNumberMixin is applied (and checked) at startup, not on the first /discord link
+        LinkManager.pendingLinks.size();
         DiscordIntegration.INSTANCE.registerEventHandler(new DiscordEventHandler() {
             @Override
             public boolean onDiscordMessagePre(MessageReceivedEvent event) {

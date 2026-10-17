@@ -36,11 +36,10 @@ public class MessageUtilsImpl extends MessageUtils {
         return quoted.substring(1, quoted.length() - 1);
     }
 
+    // Plain account name: it also goes into embed URLs (profile links), where tab-list decorations
+    // like PandaHardcoreHeart's heart made an invalid URL and JDA's exception crashed the server.
     public static String formatPlayerName(ServerPlayer player) {
-        if (player.getTabListDisplayName() != null)
-            return ChatFormatting.stripFormatting(player.getTabListDisplayName().getString());
-        else
-            return ChatFormatting.stripFormatting(player.getName().getString());
+        return ChatFormatting.stripFormatting(player.getName().getString());
     }
 
     public static MessageEmbed genItemStackEmbedIfAvailable(final Component component, Level w) {
