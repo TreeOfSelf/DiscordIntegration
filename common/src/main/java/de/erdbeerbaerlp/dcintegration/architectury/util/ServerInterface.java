@@ -60,12 +60,14 @@ public class ServerInterface implements McServerInterface {
     public void sendIngameMessage(Component msg) {
         msg = linkDiscordTag(unlinkBareDomains(msg));
         final UUID author = DiscordIgnore.author();
-        if (author != null) {
-            final String authorName = server.services().nameToIdCache().get(author).map(net.minecraft.server.players.NameAndId::name).orElse(null);
-            if (authorName != null)
-                msg = msg.clickEvent(ClickEvent.suggestCommand("/ignore " + authorName))
-                        .hoverEvent(HoverEvent.showText(Component.text(authorName + " - click to ignore")));
-        }
+        final String[] discordAuthor = DiscordIgnore.discordAuthor();
+        final String authorName = author == null ? null : server.services().nameToIdCache().get(author).map(net.minecraft.server.players.NameAndId::name).orElse(null);
+        if (authorName != null)
+            msg = msg.clickEvent(ClickEvent.suggestCommand("/ignore " + authorName))
+                    .hoverEvent(HoverEvent.showText(Component.text(authorName + " - click to ignore")));
+        else if (discordAuthor != null)
+            msg = msg.clickEvent(ClickEvent.suggestCommand("/dmute " + discordAuthor[1]))
+                    .hoverEvent(HoverEvent.showText(Component.text(discordAuthor[1] + " - click to mute their Discord messages")));
         final List<ServerPlayer> l = server.getPlayerList().getPlayers();
         try {
             for (final ServerPlayer p : l) {
@@ -73,6 +75,7 @@ public class ServerInterface implements McServerInterface {
                     continue;
                 if (DiscordIntegration.INSTANCE.ignoringPlayers.contains(p.getUUID())) continue;
                 if (DiscordIgnore.isIgnoring(server, p.getUUID(), author)) continue;
+                if (discordAuthor != null && DiscordMutes.isMuted(p.getUUID(), discordAuthor[0])) continue;
                 final Map.Entry<Boolean, Component> ping = ComponentUtils.parsePing(msg, p.getUUID(), p.getName().getString());
                 final String jsonComp = GsonComponentSerializer.gson().serialize(ping.getValue()).replace("\\\\n", "\n");
                 final net.minecraft.network.chat.Component comp = SerializeComponentUtils.fromJson(jsonComp, p.level().registryAccess());

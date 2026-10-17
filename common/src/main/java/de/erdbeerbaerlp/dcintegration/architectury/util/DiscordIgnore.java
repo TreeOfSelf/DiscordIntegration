@@ -10,11 +10,13 @@ import net.minecraft.server.MinecraftServer;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
-// Discord messages from a linked account count as that player's: PandaIgnore's /ignore hides them,
-// and clicking one suggests /ignore <name>. The core hands sendIngameMessage only the finished text,
+// Discord messages: /dmute hides a Discord user for one player (DiscordMutes), and a linked account's
+// messages also follow PandaIgnore's /ignore. Clicking one suggests /ignore <ign> (linked) or /dmute <name>. The core hands sendIngameMessage only the finished text,
 // so the author is remembered here in onDiscordMessagePre (same thread, right before it).
 public final class DiscordIgnore {
     private static final ThreadLocal<UUID> AUTHOR = new ThreadLocal<>();
+    // The Discord author of the message being relayed: [id, name as shown in game]
+    private static final ThreadLocal<String[]> DISCORD_AUTHOR = new ThreadLocal<>();
     private static Method isIgnoring;
 
     static {
@@ -39,12 +41,17 @@ public final class DiscordIgnore {
             @Override
             public boolean onDiscordMessagePre(MessageReceivedEvent event) {
                 AUTHOR.set(linkedPlayer(event.getAuthor().getId()));
+                String username = event.getAuthor().getName();
+                String nickname = event.getMember() != null ? event.getMember().getEffectiveName() : event.getAuthor().getEffectiveName();
+                DISCORD_AUTHOR.set(new String[]{event.getAuthor().getId(), username});
+                DiscordMutes.seen(event.getAuthor().getId(), username, nickname);
                 return false;
             }
 
             @Override
             public void onDiscordMessagePost(MessageReceivedEvent event) {
                 AUTHOR.remove();
+                DISCORD_AUTHOR.remove();
             }
         });
     }
@@ -57,6 +64,11 @@ public final class DiscordIgnore {
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    // [discordId, Discord username] of the Discord message being relayed right now
+    public static String[] discordAuthor() {
+        return DISCORD_AUTHOR.get();
     }
 
     // The linked player behind the Discord message being relayed right now, if any
