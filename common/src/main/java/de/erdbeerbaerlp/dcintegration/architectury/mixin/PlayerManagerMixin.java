@@ -1,5 +1,7 @@
 package de.erdbeerbaerlp.dcintegration.architectury.mixin;
 
+import de.erdbeerbaerlp.dcintegration.architectury.util.SkinHash;
+
 import dcshadow.net.kyori.adventure.text.Component;
 import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import de.erdbeerbaerlp.dcintegration.architectury.util.MessageUtilsImpl;
@@ -77,10 +79,10 @@ public class PlayerManagerMixin {
             LinkManager.checkGlobalAPI(p.getUUID());
             if (!Localization.instance().playerJoin.isBlank()) {
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.playerJoinMessage.asEmbed) {
-                    final String avatarURL = INSTANCE.getSkinURL().replace("%uuid%", p.getUUID().toString()).replace("%uuid_dashless%", p.getUUID().toString().replace("-", "")).replace("%name%", p.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
+                    final String avatarURL = INSTANCE.getSkinURL().replace("%skin%", SkinHash.of(p.getUUID())).replace("%uuid%", p.getUUID().toString()).replace("%uuid_dashless%", p.getUUID().toString().replace("-", "")).replace("%name%", p.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
                     if (!Configuration.instance().embedMode.playerJoinMessage.customJSON.isBlank()) {
                         final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbedJson(Configuration.instance().embedMode.playerJoinMessage.customJSON
-                                .replace("%uuid%", p.getUUID().toString())
+                                .replace("%skin%", SkinHash.of(p.getUUID())).replace("%uuid%", p.getUUID().toString())
                                 .replace("%uuid_dashless%", p.getUUID().toString().replace("-", ""))
                                 .replace("%name%", MessageUtilsImpl.formatPlayerName(p))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())

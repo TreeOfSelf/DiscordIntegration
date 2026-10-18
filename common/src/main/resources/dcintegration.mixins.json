@@ -13,7 +13,8 @@
     "MixinMinecraftServer",
     "LinkNumberMixin",
     "LinkCommandMixin",
-    "CommandLinkMixin"
+    "CommandLinkMixin",
+    "WebhookSkinMixin"
   ],
   "injectors": {
     "defaultRequire": 1

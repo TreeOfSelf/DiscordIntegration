@@ -1,5 +1,7 @@
 package de.erdbeerbaerlp.dcintegration.architectury.mixin;
 
+import de.erdbeerbaerlp.dcintegration.architectury.util.SkinHash;
+
 
 import de.erdbeerbaerlp.dcintegration.architectury.DiscordIntegrationMod;
 import de.erdbeerbaerlp.dcintegration.architectury.util.MessageUtilsImpl;
@@ -43,13 +45,13 @@ public class NetworkHandlerMixin {
         if (reason.equals(Component.translatable("disconnect.timeout")))
             DiscordIntegrationMod.timeouts.add(this.player.getUUID());
         INSTANCE.callEventC((a)->a.onPlayerLeave(player.getUUID()));
-        final String avatarURL = INSTANCE.getSkinURL().replace("%uuid%", player.getUUID().toString()).replace("%uuid_dashless%", player.getUUID().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
+        final String avatarURL = INSTANCE.getSkinURL().replace("%skin%", SkinHash.of(player.getUUID())).replace("%uuid%", player.getUUID().toString()).replace("%uuid_dashless%", player.getUUID().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
         if (DiscordIntegration.INSTANCE != null && !DiscordIntegrationMod.timeouts.contains(player.getUUID())) {
             if (!Localization.instance().playerLeave.isBlank()) {
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.playerLeaveMessages.asEmbed) {
                     if (!Configuration.instance().embedMode.playerLeaveMessages.customJSON.isBlank()) {
                         final EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbedJson(Configuration.instance().embedMode.playerLeaveMessages.customJSON
-                                .replace("%uuid%", player.getUUID().toString())
+                                .replace("%skin%", SkinHash.of(player.getUUID())).replace("%uuid%", player.getUUID().toString())
                                 .replace("%uuid_dashless%", player.getUUID().toString().replace("-", ""))
                                 .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())

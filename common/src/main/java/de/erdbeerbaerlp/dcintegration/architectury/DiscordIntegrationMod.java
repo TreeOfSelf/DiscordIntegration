@@ -1,5 +1,7 @@
 package de.erdbeerbaerlp.dcintegration.architectury;
 
+import de.erdbeerbaerlp.dcintegration.architectury.util.SkinHash;
+
 import de.erdbeerbaerlp.dcintegration.architectury.util.DiscordIgnore;
 import de.erdbeerbaerlp.dcintegration.architectury.util.DiscordMutes;
 
@@ -197,13 +199,13 @@ public final class DiscordIntegrationMod {
             if (LinkManager.isPlayerLinked(player.getUUID()) && LinkManager.getLink(null, player.getUUID()).settings.hideFromDiscord) {
                 return;
             }
-            final String avatarURL = INSTANCE.getSkinURL().replace("%uuid%", player.getUUID().toString()).replace("%uuid_dashless%", player.getUUID().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
+            final String avatarURL = INSTANCE.getSkinURL().replace("%skin%", SkinHash.of(player.getUUID())).replace("%uuid%", player.getUUID().toString()).replace("%uuid_dashless%", player.getUUID().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
             if (INSTANCE != null && !DiscordIntegrationMod.timeouts.contains(player.getUUID())) {
                 if (!Localization.instance().playerLeave.isBlank()) {
                     if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.playerLeaveMessages.asEmbed) {
                         if (!Configuration.instance().embedMode.playerLeaveMessages.customJSON.isBlank()) {
                             final EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbedJson(Configuration.instance().embedMode.playerLeaveMessages.customJSON
-                                    .replace("%uuid%", player.getUUID().toString())
+                                    .replace("%skin%", SkinHash.of(player.getUUID())).replace("%uuid%", player.getUUID().toString())
                                     .replace("%uuid_dashless%", player.getUUID().toString().replace("-", ""))
                                     .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
                                     .replace("%randomUUID%", UUID.randomUUID().toString())
@@ -225,10 +227,10 @@ public final class DiscordIntegrationMod {
                 return;
             if (!Localization.instance().playerJoin.isBlank()) {
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.playerJoinMessage.asEmbed) {
-                    final String avatarURL = INSTANCE.getSkinURL().replace("%uuid%", player.getUUID().toString()).replace("%uuid_dashless%", player.getUUID().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
+                    final String avatarURL = INSTANCE.getSkinURL().replace("%skin%", SkinHash.of(player.getUUID())).replace("%uuid%", player.getUUID().toString()).replace("%uuid_dashless%", player.getUUID().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
                     if (!Configuration.instance().embedMode.playerJoinMessage.customJSON.isBlank()) {
                         final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbedJson(Configuration.instance().embedMode.playerJoinMessage.customJSON
-                                .replace("%uuid%", player.getUUID().toString())
+                                .replace("%skin%", SkinHash.of(player.getUUID())).replace("%uuid%", player.getUUID().toString())
                                 .replace("%uuid_dashless%", player.getUUID().toString().replace("-", ""))
                                 .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
@@ -310,10 +312,10 @@ public final class DiscordIntegrationMod {
             text = MessageUtils.escapeMarkdown(text);
             if (!Localization.instance().discordChatMessage.isBlank())
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.chatMessages.asEmbed) {
-                    final String avatarURL = INSTANCE.getSkinURL().replace("%uuid%", player.getUUID().toString()).replace("%uuid_dashless%", player.getUUID().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
+                    final String avatarURL = INSTANCE.getSkinURL().replace("%skin%", SkinHash.of(player.getUUID())).replace("%uuid%", player.getUUID().toString()).replace("%uuid_dashless%", player.getUUID().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
                     if (!Configuration.instance().embedMode.chatMessages.customJSON.isBlank()) {
                         final EmbedBuilder b = Configuration.instance().embedMode.chatMessages.toEmbedJson(Configuration.instance().embedMode.chatMessages.customJSON
-                                .replace("%uuid%", player.getUUID().toString())
+                                .replace("%skin%", SkinHash.of(player.getUUID())).replace("%uuid%", player.getUUID().toString())
                                 .replace("%uuid_dashless%", player.getUUID().toString().replace("-", ""))
                                 .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
