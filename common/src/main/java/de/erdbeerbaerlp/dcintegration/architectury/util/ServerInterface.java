@@ -58,23 +58,14 @@ public class ServerInterface implements McServerInterface {
 
     @Override
     public void sendIngameMessage(Component msg) {
-        msg = linkDiscordTag(unlinkBareDomains(msg));
-        final UUID author = DiscordIgnore.author();
         final String[] discordAuthor = DiscordIgnore.discordAuthor();
-        final String authorName = author == null ? null : server.services().nameToIdCache().get(author).map(net.minecraft.server.players.NameAndId::name).orElse(null);
-        if (authorName != null)
-            msg = msg.clickEvent(ClickEvent.suggestCommand("/ignore " + authorName))
-                    .hoverEvent(HoverEvent.showText(Component.text(authorName + " - click to ignore")));
-        else if (discordAuthor != null)
-            msg = msg.clickEvent(ClickEvent.suggestCommand("/ignore @" + discordAuthor[1]))
-                    .hoverEvent(HoverEvent.showText(Component.text("@" + discordAuthor[1] + " - click to ignore their Discord messages")));
+        msg = linkDiscordTag(unlinkBareDomains(nameClicks(msg, discordAuthor == null ? null : discordAuthor[1], new boolean[1])));
         final List<ServerPlayer> l = server.getPlayerList().getPlayers();
         try {
             for (final ServerPlayer p : l) {
                 if (!playerHasPermissions(p, MinecraftPermission.READ_MESSAGES, MinecraftPermission.USER))
                     continue;
                 if (DiscordIntegration.INSTANCE.ignoringPlayers.contains(p.getUUID())) continue;
-                if (DiscordIgnore.isIgnoring(server, p.getUUID(), author)) continue;
                 if (discordAuthor != null && DiscordMutes.isMuted(p.getUUID(), discordAuthor[0])) continue;
                 final Map.Entry<Boolean, Component> ping = ComponentUtils.parsePing(msg, p.getUUID(), p.getName().getString());
                 final String jsonComp = GsonComponentSerializer.gson().serialize(ping.getValue()).replace("\\\\n", "\n");
@@ -122,9 +113,7 @@ public class ServerInterface implements McServerInterface {
             if (Configuration.instance().messages.discordRoleColorIngame)
                 memberStyle = memberStyle.color(TextColor.color(member.getColorRaw()));
 
-            final Component user = Component.text(member.getEffectiveName()).style(memberStyle
-                    .clickEvent(ClickEvent.suggestCommand("@" + (member.getUser().getDiscriminator().equals("0000")?member.getUser().getName():member.getUser().getAsTag())))
-                    .hoverEvent(HoverEvent.showText(Component.text(Localization.instance().discordUserHover.replace("%user#tag%", (member.getUser().getDiscriminator().equals("0000")?member.getUser().getName():member.getUser().getAsTag())).replace("%user%", member.getEffectiveName()).replace("%id%", member.getUser().getId())))));
+            final Component user = Component.text(member.getEffectiveName()).style(memberStyle);
             final TextReplacementConfig userReplacer = ComponentUtils.replaceLiteral("%user%", user);
             final TextReplacementConfig usernameReplacer = ComponentUtils.replaceLiteral("%name%", user);
             final TextReplacementConfig emoteReplacer = ComponentUtils.replaceLiteral("%emote%", emote);
@@ -140,6 +129,23 @@ public class ServerInterface implements McServerInterface {
                 });
             else sendReactionMCMessage(p, out);
         }
+    }
+
+    // The core makes every Discord name click to "@name" (mention) with a "Click to mention" hover. Mentioning is a
+    // Discord-only thing: the author's name instead clicks to /ignore @username, every other name goes plain.
+    private static Component nameClicks(Component c, String authorName, boolean[] authorDone) {
+        final ClickEvent click = c.clickEvent();
+        if (click != null && click.action() == ClickEvent.Action.SUGGEST_COMMAND && click.value().startsWith("@")) {
+            if (!authorDone[0] && authorName != null && click.value().equals("@" + authorName)) {
+                authorDone[0] = true;
+                c = c.clickEvent(ClickEvent.suggestCommand("/ignore @" + authorName))
+                        .hoverEvent(HoverEvent.showText(Component.text("Click to ignore @" + authorName)));
+            } else {
+                c = c.clickEvent(null).hoverEvent(null);
+            }
+        }
+        if (c.children().isEmpty()) return c;
+        return c.children(c.children().stream().map(child -> nameClicks(child, authorName, authorDone)).toList());
     }
 
     // The [Discord] tag in front of relayed messages opens the Discord invite
