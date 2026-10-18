@@ -30,10 +30,15 @@ public final class SkinHash {
         return KNOWN.getOrDefault(uuid, uuid.toString());
     }
 
+    // %week%: weeks since 1970, so a URL like .../bust/%skin%/w%week%/100.png gets a new pose (and a new URL) every week
+    public static String week() {
+        return Long.toString(System.currentTimeMillis() / 604_800_000L);
+    }
+
     public static String apply(String text, String uuid) {
-        if (text == null || !text.contains("%skin%")) return text;
+        if (text == null || !(text.contains("%skin%") || text.contains("%week%"))) return text;
         try {
-            return text.replace("%skin%", of(UUID.fromString(uuid)));
+            return text.replace("%skin%", of(UUID.fromString(uuid))).replace("%week%", week());
         } catch (IllegalArgumentException e) {
             return text;
         }

@@ -37,10 +37,10 @@ public class ServerPlayerMixin {
             final MessageEmbed embed = MessageUtilsImpl.genItemStackEmbedIfAvailable(deathMessage, p.level());
             if (!Localization.instance().playerDeath.isBlank())
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.deathMessage.asEmbed) {
-                    final String avatarURL = INSTANCE.getSkinURL().replace("%skin%", SkinHash.of(p.getUUID())).replace("%uuid%", p.getUUID().toString()).replace("%uuid_dashless%", p.getUUID().toString().replace("-", "")).replace("%name%", p.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
+                    final String avatarURL = INSTANCE.getSkinURL().replace("%skin%", SkinHash.of(p.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", p.getUUID().toString()).replace("%uuid_dashless%", p.getUUID().toString().replace("-", "")).replace("%name%", p.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
                     if(!Configuration.instance().embedMode.deathMessage.customJSON.isBlank()){
                         final EmbedBuilder b = Configuration.instance().embedMode.deathMessage.toEmbedJson(Configuration.instance().embedMode.deathMessage.customJSON
-                                .replace("%skin%", SkinHash.of(p.getUUID())).replace("%uuid%", p.getUUID().toString())
+                                .replace("%skin%", SkinHash.of(p.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", p.getUUID().toString())
                                 .replace("%uuid_dashless%", p.getUUID().toString().replace("-", ""))
                                 .replace("%name%", MessageUtilsImpl.formatPlayerName(p))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
