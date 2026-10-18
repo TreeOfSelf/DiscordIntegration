@@ -4,6 +4,7 @@ import de.erdbeerbaerlp.dcintegration.architectury.DiscordIntegrationMod;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dcshadow.com.vdurmont.emoji.EmojiParser;
 import dcshadow.net.kyori.adventure.text.Component;
+import dcshadow.net.kyori.adventure.text.TextComponent;
 import dcshadow.net.kyori.adventure.text.TextReplacementConfig;
 import dcshadow.net.kyori.adventure.text.event.ClickEvent;
 import dcshadow.net.kyori.adventure.text.event.HoverEvent;
@@ -37,6 +38,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +61,7 @@ public class ServerInterface implements McServerInterface {
     @Override
     public void sendIngameMessage(Component msg) {
         final String[] discordAuthor = DiscordIgnore.discordAuthor();
-        msg = linkDiscordTag(unlinkBareDomains(nameClicks(msg, discordAuthor == null ? null : discordAuthor[1], new boolean[1])));
+        msg = linkDiscordTag(unlinkBareDomains(colorMentions(nameClicks(msg, discordAuthor == null ? null : discordAuthor[1], new boolean[1]))));
         final List<ServerPlayer> l = server.getPlayerList().getPlayers();
         try {
             for (final ServerPlayer p : l) {
@@ -131,21 +133,49 @@ public class ServerInterface implements McServerInterface {
         }
     }
 
-    // The core makes every Discord name click to "@name" (mention) with a "Click to mention" hover. Mentioning is a
-    // Discord-only thing: the author's name instead clicks to /ignore @username, every other name goes plain.
+    // Discord mentions in game are plain blue text, never clickable or hoverable
+    private static final TextColor MENTION_COLOR = TextColor.color(0x7289DA);
+
+    // The core makes Discord names click to mention ("@name", or "<@id>" for the replied-to user) with a "Click to
+    // mention" hover. Mentioning is a Discord-only thing: the author's name instead clicks to /ignore @username, every
+    // other name loses click and hover, and the replied-to name (after the template's "@") goes blue like a mention.
     private static Component nameClicks(Component c, String authorName, boolean[] authorDone) {
         final ClickEvent click = c.clickEvent();
-        if (click != null && click.action() == ClickEvent.Action.SUGGEST_COMMAND && click.value().startsWith("@")) {
+        if (click != null && click.action() == ClickEvent.Action.SUGGEST_COMMAND
+                && (click.value().startsWith("@") || click.value().startsWith("<@"))) {
             if (!authorDone[0] && authorName != null && click.value().equals("@" + authorName)) {
                 authorDone[0] = true;
                 c = c.clickEvent(ClickEvent.suggestCommand("/ignore @" + authorName))
                         .hoverEvent(HoverEvent.showText(Component.text("Click to ignore @" + authorName)));
             } else {
                 c = c.clickEvent(null).hoverEvent(null);
+                if (click.value().startsWith("<@")) c = c.color(MENTION_COLOR);
             }
         }
         if (c.children().isEmpty()) return c;
-        return c.children(c.children().stream().map(child -> nameClicks(child, authorName, authorDone)).toList());
+        final List<Component> children = new ArrayList<>(c.children().stream().map(child -> nameClicks(child, authorName, authorDone)).toList());
+        // Move the template's "@" in front of a blue reply name into it, so "@name" is blue as a whole. The "@" is the
+        // end of the text right before the name: the previous sibling's, or this component's own if the name is its first child.
+        for (int i = 0; i < children.size(); i++) {
+            if (!(children.get(i) instanceof TextComponent name) || !MENTION_COLOR.equals(name.color()) || name.content().startsWith("@")) continue;
+            if (i > 0 && children.get(i - 1) instanceof TextComponent before && before.content().endsWith("@")) {
+                children.set(i - 1, before.content(before.content().substring(0, before.content().length() - 1)));
+                children.set(i, name.content("@" + name.content()));
+            } else if (i == 0 && c instanceof TextComponent self && self.content().endsWith("@")) {
+                c = self.content(self.content().substring(0, self.content().length() - 1));
+                children.set(i, name.content("@" + name.content()));
+            }
+        }
+        return c.children(children);
+    }
+
+    // "@name" / "@role" / "@everyone" in the message text go blue
+    private static Component colorMentions(Component msg) {
+        for (String mention : DiscordIgnore.mentions()) {
+            msg = msg.replaceText(TextReplacementConfig.builder().matchLiteral(mention)
+                    .replacement(m -> m.color(MENTION_COLOR).clickEvent(null).hoverEvent(null)).build());
+        }
+        return msg;
     }
 
     // The [Discord] tag in front of relayed messages opens the Discord invite
