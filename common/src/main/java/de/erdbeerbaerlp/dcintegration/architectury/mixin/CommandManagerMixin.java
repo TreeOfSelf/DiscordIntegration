@@ -1,6 +1,7 @@
 package de.erdbeerbaerlp.dcintegration.architectury.mixin;
 
 import de.erdbeerbaerlp.dcintegration.architectury.DiscordIntegrationMod;
+import de.erdbeerbaerlp.dcintegration.architectury.util.MessageUtilsImpl;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -70,6 +71,12 @@ public class CommandManagerMixin {
                 final Entity sourceEntity = source.getEntity();
 
                 if(sourceEntity instanceof Player && INSTANCE.getServerInterface().isPlayerVanish(sourceEntity.getUUID())) return;
+                // a player's /me gets the chat embed (face, color, profile link) instead of a bare italic line
+                if (command.startsWith("me") && sourceEntity instanceof ServerPlayer player
+                        && Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.chatMessages.asEmbed) {
+                    DiscordIntegrationMod.sendChatEmbed(player, "*" + MessageUtilsImpl.escapeMarkdown(MessageUtilsImpl.formatPlayerName(player) + " " + command.replaceFirst("me ", "").trim()) + "*");
+                    return;
+                }
                 DiscordIntegration.INSTANCE.sendMessage(name, sourceEntity != null ? sourceEntity.getUUID().toString() : "0000000", new DiscordMessage(null, msg, !raw), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
                 return;
             }

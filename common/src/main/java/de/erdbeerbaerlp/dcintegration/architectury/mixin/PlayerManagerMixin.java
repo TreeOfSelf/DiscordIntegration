@@ -84,6 +84,7 @@ public class PlayerManagerMixin {
                         final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbedJson(Configuration.instance().embedMode.playerJoinMessage.customJSON
                                 .replace("%skin%", SkinHash.of(p.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", p.getUUID().toString())
                                 .replace("%uuid_dashless%", p.getUUID().toString().replace("-", ""))
+                                .replace("%nameMd%", MessageUtilsImpl.markdownPlayerName(p))
                                 .replace("%name%", MessageUtilsImpl.formatPlayerName(p))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
                                 .replace("%avatarURL%", avatarURL)

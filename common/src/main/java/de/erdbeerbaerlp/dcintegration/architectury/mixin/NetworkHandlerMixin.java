@@ -53,6 +53,7 @@ public class NetworkHandlerMixin {
                         final EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbedJson(Configuration.instance().embedMode.playerLeaveMessages.customJSON
                                 .replace("%skin%", SkinHash.of(player.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", player.getUUID().toString())
                                 .replace("%uuid_dashless%", player.getUUID().toString().replace("-", ""))
+                                .replace("%nameMd%", MessageUtilsImpl.markdownPlayerName(player))
                                 .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
                                 .replace("%avatarURL%", avatarURL)

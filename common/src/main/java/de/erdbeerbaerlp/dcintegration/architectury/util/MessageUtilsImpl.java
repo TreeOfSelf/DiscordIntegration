@@ -38,6 +38,17 @@ public class MessageUtilsImpl extends MessageUtils {
 
     // Plain account name: it also goes into embed URLs (profile links), where tab-list decorations
     // like PandaHardcoreHeart's heart made an invalid URL and JDA's exception crashed the server.
+    // The core's MessageUtils.escapeMarkdown never matches anything (String.replace with a regex), so
+    // names like a_b_c turned into italics wherever Discord parses markdown (embed descriptions).
+    public static String escapeMarkdown(String text) {
+        return text.replaceAll("([\\\\`*_~|])", "\\\\$1");
+    }
+
+    // %nameMd%: the account name for embed descriptions (markdown escaped, JSON escaped)
+    public static String markdownPlayerName(ServerPlayer player) {
+        return escapeJson(escapeMarkdown(formatPlayerName(player)));
+    }
+
     public static String formatPlayerName(ServerPlayer player) {
         return ChatFormatting.stripFormatting(player.getName().getString());
     }

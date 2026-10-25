@@ -207,7 +207,8 @@ public final class DiscordIntegrationMod {
                             final EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbedJson(Configuration.instance().embedMode.playerLeaveMessages.customJSON
                                     .replace("%skin%", SkinHash.of(player.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", player.getUUID().toString())
                                     .replace("%uuid_dashless%", player.getUUID().toString().replace("-", ""))
-                                    .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
+                                    .replace("%nameMd%", MessageUtilsImpl.markdownPlayerName(player))
+                                .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
                                     .replace("%randomUUID%", UUID.randomUUID().toString())
                                     .replace("%avatarURL%", avatarURL)
                                     .replace("%playerColor%", "" + TextColors.generateFromUUID(player.getUUID()).getRGB())
@@ -232,6 +233,7 @@ public final class DiscordIntegrationMod {
                         final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbedJson(Configuration.instance().embedMode.playerJoinMessage.customJSON
                                 .replace("%skin%", SkinHash.of(player.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", player.getUUID().toString())
                                 .replace("%uuid_dashless%", player.getUUID().toString().replace("-", ""))
+                                .replace("%nameMd%", MessageUtilsImpl.markdownPlayerName(player))
                                 .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
                                 .replace("%avatarURL%", avatarURL)
@@ -247,6 +249,31 @@ public final class DiscordIntegrationMod {
                 } else
                     INSTANCE.sendMessage(Localization.instance().playerJoin.replace("%player%", MessageUtilsImpl.formatPlayerName(player)), INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
             }
+        }
+    }
+
+    /** Chat's embed (embedMode.chatMessages), also used for /me. text goes in as the description, already markdown. */
+    public static void sendChatEmbed(ServerPlayer player, String text) {
+        final String avatarURL = INSTANCE.getSkinURL().replace("%skin%", SkinHash.of(player.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", player.getUUID().toString()).replace("%uuid_dashless%", player.getUUID().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
+        if (!Configuration.instance().embedMode.chatMessages.customJSON.isBlank()) {
+            final EmbedBuilder b = Configuration.instance().embedMode.chatMessages.toEmbedJson(Configuration.instance().embedMode.chatMessages.customJSON
+                    .replace("%skin%", SkinHash.of(player.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", player.getUUID().toString())
+                    .replace("%uuid_dashless%", player.getUUID().toString().replace("-", ""))
+                    .replace("%nameMd%", MessageUtilsImpl.markdownPlayerName(player))
+                    .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
+                    .replace("%randomUUID%", UUID.randomUUID().toString())
+                    .replace("%avatarURL%", avatarURL)
+                    .replace("%msg%", MessageUtilsImpl.escapeJson(text))
+                    .replace("%playerColor%", "" + TextColors.generateFromUUID(player.getUUID()).getRGB())
+            );
+            DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()), INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
+        } else {
+            EmbedBuilder b = Configuration.instance().embedMode.chatMessages.toEmbed();
+            if (Configuration.instance().embedMode.chatMessages.generateUniqueColors)
+                b = b.setColor(TextColors.generateFromUUID(player.getUUID()));
+            b = b.setAuthor(MessageUtilsImpl.formatPlayerName(player), null, avatarURL)
+                    .setDescription(text);
+            DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()), INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
         }
     }
 
@@ -312,26 +339,7 @@ public final class DiscordIntegrationMod {
             text = MessageUtils.escapeMarkdown(text);
             if (!Localization.instance().discordChatMessage.isBlank())
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.chatMessages.asEmbed) {
-                    final String avatarURL = INSTANCE.getSkinURL().replace("%skin%", SkinHash.of(player.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", player.getUUID().toString()).replace("%uuid_dashless%", player.getUUID().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
-                    if (!Configuration.instance().embedMode.chatMessages.customJSON.isBlank()) {
-                        final EmbedBuilder b = Configuration.instance().embedMode.chatMessages.toEmbedJson(Configuration.instance().embedMode.chatMessages.customJSON
-                                .replace("%skin%", SkinHash.of(player.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", player.getUUID().toString())
-                                .replace("%uuid_dashless%", player.getUUID().toString().replace("-", ""))
-                                .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
-                                .replace("%randomUUID%", UUID.randomUUID().toString())
-                                .replace("%avatarURL%", avatarURL)
-                                .replace("%msg%", MessageUtilsImpl.escapeJson(text))
-                                .replace("%playerColor%", "" + TextColors.generateFromUUID(player.getUUID()).getRGB())
-                        );
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()), INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
-                    } else {
-                        EmbedBuilder b = Configuration.instance().embedMode.chatMessages.toEmbed();
-                        if (Configuration.instance().embedMode.chatMessages.generateUniqueColors)
-                            b = b.setColor(TextColors.generateFromUUID(player.getUUID()));
-                        b = b.setAuthor(MessageUtilsImpl.formatPlayerName(player), null, avatarURL)
-                                .setDescription(text);
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()), INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
-                    }
+                    sendChatEmbed(player, text);
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(embed, MessageUtilsImpl.formatPlayerName(player) + ": " + text, true), channel);
 

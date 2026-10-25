@@ -49,6 +49,7 @@ public class AdvancementMixin {
                         final EmbedBuilder b = Configuration.instance().embedMode.advancementMessage.toEmbedJson(Configuration.instance().embedMode.advancementMessage.customJSON
                                 .replace("%skin%", SkinHash.of(player.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", player.getUUID().toString())
                                 .replace("%uuid_dashless%", player.getUUID().toString().replace("-", ""))
+                                .replace("%nameMd%", MessageUtilsImpl.markdownPlayerName(player))
                                 .replace("%name%", MessageUtilsImpl.formatPlayerName(player))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
                                 .replace("%avatarURL%", avatarURL)

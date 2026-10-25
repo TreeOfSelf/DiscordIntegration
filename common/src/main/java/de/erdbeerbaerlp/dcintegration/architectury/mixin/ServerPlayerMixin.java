@@ -42,10 +42,11 @@ public class ServerPlayerMixin {
                         final EmbedBuilder b = Configuration.instance().embedMode.deathMessage.toEmbedJson(Configuration.instance().embedMode.deathMessage.customJSON
                                 .replace("%skin%", SkinHash.of(p.getUUID())).replace("%week%", SkinHash.week()).replace("%uuid%", p.getUUID().toString())
                                 .replace("%uuid_dashless%", p.getUUID().toString().replace("-", ""))
+                                .replace("%nameMd%", MessageUtilsImpl.markdownPlayerName(p))
                                 .replace("%name%", MessageUtilsImpl.formatPlayerName(p))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
                                 .replace("%avatarURL%", avatarURL)
-                                .replace("%deathMessage%", MessageUtilsImpl.escapeJson(ChatFormatting.stripFormatting(deathMessage.getString()).replace(MessageUtilsImpl.formatPlayerName(p) + " ", "")))
+                                .replace("%deathMessage%", MessageUtilsImpl.escapeJson(MessageUtilsImpl.escapeMarkdown(ChatFormatting.stripFormatting(deathMessage.getString()).replace(MessageUtilsImpl.formatPlayerName(p) + " ", ""))))
                                 .replace("%playerColor%", ""+ TextColors.generateFromUUID(p.getUUID()).getRGB())
                         );
                         if (embed != null) {
